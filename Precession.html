@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Ellipse Precession</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <style>
+        #animation {
+            float: right ;
+            width: 50% ;
+        }
+        #pdf {
+            float: right;
+            width: 50%;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Apsidal Precession</h1>
+    <p>A satellite will precess around an oblate spheroid. The maths behind why this happens is explained in the pdf below.</p>
+    
+    <div id="#container">
+        <!-- This element has to be before the script -->
+        <div id="animation" style="position: relative;">
+
+            <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
+            <p>M <span id="meanAnomaly"></span></p>
+            <p>E <span id="eccentricAnomaly"></span></p>
+            <p>Orbit Period <span id="orbitPeriod"></span></p>
+            <p>Time <span id="time"></span></p>
+
+            <canvas id="axisCanvas" width="1000" height="1000"
+                    style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+            <canvas id="orbitCanvas" width="1000" height="1000"
+                    style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+        </div>
+
+        <div id="#pdf">
+            <p>(Keywords : Kaula eccentricity functions apsidal precession inclination spheroid orbital Mercury spin orbit coupling)</p>
+            <embed src="C:\Users\Joe\OneDrive\Documents\Physics\Physics\spheroid.pdf" width="800px" height="2100px">
+        </div>
+
+    </div>
+    
+    <script src="precession.js"></script>
+
+</body>
+</html>
