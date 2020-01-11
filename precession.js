@@ -44,7 +44,7 @@ $(document).ready(function () {
     let orbitCanvas = $("#orbitCanvas");
     orbitContext = orbitCanvas[0].getContext("2d");
 
-    $("#orbitPeriod").html(orbitPeriod);
+    $("#orbitPeriod").html(orbitPeriod.toFixed());
 
     drawMajorAxis()
     drawBody(0, 0, "blue", 5); // central body
@@ -91,7 +91,7 @@ function calculateE(M) {
             break;
         u = u_next;
     }
-    document.getElementById("eccentricAnomaly").innerHTML = u;
+    $("#eccentricAnomaly").html(u.toFixed(2))    ;
 
     return u;
 }
@@ -99,8 +99,11 @@ function calculateE(M) {
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let M = 2.0 * Math.PI * (time / orbitPeriod);
-    document.getElementById("meanAnomaly").innerHTML = M;
+    let numOrbits = time / orbitPeriod
+    let M = 2.0 * Math.PI * (numOrbits);
+    $("#meanAnomaly").html(M.toFixed(2));
+
+    $("#completeOrbits").html(Math.floor(numOrbits));
 
     // 2) Seed with mean anomaly and solve Kepler's eqn for E
     let u = calculateE(M);
