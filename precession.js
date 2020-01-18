@@ -13,7 +13,7 @@ var axisContext;
 
 var axisCanvas;
 
-var time;
+var daysElapsed;
 var OmegaTotal;
 
 var elements;
@@ -23,9 +23,10 @@ var canvas_focus_x_coords;
 var canvas_focus_y_coords;
 
 var redrawTimeout;
+var model;
 
 function runAnimation() {
-    time = 0;
+    daysElapsed = 0;
     OmegaTotal = 0;
 
     $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
@@ -52,7 +53,7 @@ $(document).ready(function () {
         clearTimeout(redrawTimeout);
         clearAllCanvases();
 
-        let model = $('input[name=model]:checked').val();
+        model = $('input[name=model]:checked').val();
         if (model == 'anim') {
             elements = animElements;
         }
@@ -81,19 +82,9 @@ $(document).ready(function () {
         runAnimation();
     });
 
-    $("input[name='model'][value='anim']").prop('checked', true);
+    $("input[name='model'][value='mercury']").prop('checked', true);
 
 });
-
-function clearAllCanvases() {
-    clearMajorAxis;
-    backgroundContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
-    orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
-}
-
-function clearMajorAxis() {
-    axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
-}
 
 function drawMajorAxis(context, color) {
     context.strokeStyle = color;
@@ -144,14 +135,34 @@ function calculateE(M) {
     return u;
 }
 
+var lastOrbitCount = 0
+var orbitCounter = 0;
+
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let numOrbits = time / elements.orbitPeriodInDays()
+    let numOrbits = daysElapsed / elements.orbitPeriodInDays()
     let M = 2.0 * Math.PI * (numOrbits);
     $("#meanAnomaly").html(M.toFixed(2));
 
-    $("#completeOrbits").html(Math.floor(numOrbits));
+    let completeOrbits = Math.floor(numOrbits);
+    $("#completeOrbits").html(completeOrbits);
+
+    const deltaCenturies = 100000;
+    let changeInDays = 1;
+    if (model == 'mercury') {
+        if (completeOrbits > lastOrbitCount) {
+            orbitCounter++;
+
+            if (orbitCounter == 11) {
+                orbitCounter = 0
+                changeInDays = 365 * 100 * deltaCenturies; 
+            }
+        }
+    }
+
+    daysElapsed += changeInDays;
+    lastOrbitCount = completeOrbits;
 
     // 2) Seed with mean anomaly and solve Kepler's eqn for E
     let u = calculateE(M);
@@ -162,20 +173,19 @@ function orbitBody() {
     let sin_f = (Math.sqrt(1 - elements.e * elements.e) * Math.sin(u)) / (1 - elements.e * Math.cos(u));
     let r = elements.a * (1 - elements.e * elements.e) / (1 + elements.e * cos_f);
 
-    time = time + 1;
-    let years = Math.floor(time / 365);
+    let years = Math.floor(daysElapsed / 365);
     $("#years").html(years);
 
     // animate
     ellipse_frame_x = r * cos_f;
     ellipse_frame_y = r * sin_f;
 
-    let dOmega = elements.dOmega;
+    let dOmega = elements.dOmega * changeInDays;
     OmegaTotal += dOmega;
     $("#Omega").html(OmegaTotal.toExponential(10));
 
     // rotate the ellipse and calculate x and y in the inertial frame of reference
-    let inertialCoords = transformCoords(0, dOmega * time, ellipse_frame_x, ellipse_frame_y)
+    let inertialCoords = transformCoords(0, dOmega, ellipse_frame_x, ellipse_frame_y)
 
     drawBody(inertialCoords.X, inertialCoords.Y, "black", 1);
         
@@ -243,10 +253,9 @@ function getMercuryElements() {
     let a = mercurySemiMajorAxis_KmE6 * 1E6 // units KM
 
     // per day
-    let dOmega = 3 * 2 * Math.PI / mercuryOrbitalPeriod_Days * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
+    let dOmega = 3 * (2 * Math.PI / mercuryOrbitalPeriod_Days) * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
+    dOmega = dOmega / Math.pow(1 - Math.pow(mercuryOrbitalEccentricity,2), 2);
 
-    dOmega *= 1E8;
-    
     let elements = new Elements(gm, a, mercuryOrbitalEccentricity, dOmega, (a/150).toFixed(1));
 
     return elements;
@@ -262,4 +271,14 @@ function getAnimationElements() {
 // Need Elements class defined before can use it
 var animElements = getAnimationElements();
 var mercuryElements = getMercuryElements();
+
+function clearAllCanvases() {
+    clearMajorAxis;
+    backgroundContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+    orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
+
+function clearMajorAxis() {
+    axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
 
