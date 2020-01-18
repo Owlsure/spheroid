@@ -1,60 +1,45 @@
+"use strict";
 /*
 Code adapted from 
 http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 */
 
-var orbitContext;
-var axisContext;
-var axisCanvas;
-
-var time = 0;
-var OmegaTotal = 0;
 var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
 
-class Elements {
-    constructor(GM, a, e, dOmega, displayScaleFactor) {
-        this.a = a; // km - semi major axis
-        this.GM = GM; // km^3/day^2
-        this.e = e; // eccentricity
-        this.dOmega = dOmega; // per day
-        this.displayScaleFactor = displayScaleFactor;
-    }
+var backgroundContext;
+var orbitContext;
+var axisContext;
 
-    // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
-    // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
-    orbitPeriodInDays() {
-        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
-        return period;
-    }
+var axisCanvas;
+
+var time;
+var OmegaTotal;
+
+var elements;
+var apihelion;
+var perihelion;
+var canvas_focus_x_coords;
+var canvas_focus_y_coords;
+
+var redrawTimeout;
+
+function runAnimation() {
+    time = 0;
+    OmegaTotal = 0;
+
+    $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
+
+    drawMajorAxis(backgroundContext, "lightblue");
+    drawMajorAxis(axisContext, "red")
+    drawBody(0, 0, "blue", 5); // central body
+    orbitBody();
 }
-
-var animElements = getAnimationElements();
-var mercuryElements = getMercuryElements();
-
-var elements = animElements;
-
-// declaration of variables is important e.g. cannot use e before it is declared
-const centreOfEllipseInCanvas = 300 //
-const canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / elements.displayScaleFactor * elements.e;
-const canvas_focus_y_coords = centreOfEllipseInCanvas;
-
-var apihelion =
-    {
-        X: -1 * elements.a * (1 + elements.e),
-        Y:0
-    };
-
-var perihelion = 
-    {
-        X: elements.a * (1 - elements.e),
-        Y: 0
-    };
 
 // 1) cannot access $("#axisCanvas"), etc until document ready
 // 2) need to index [0] into canvas
 $(document).ready(function () {
-    backgroundCanvas = $("#backgroundCanvas");
+    let backgroundCanvas = $("#backgroundCanvas");
     backgroundContext = backgroundCanvas[0].getContext("2d");
 
     axisCanvas = $("#axisCanvas");
@@ -63,13 +48,48 @@ $(document).ready(function () {
     let orbitCanvas = $("#orbitCanvas");
     orbitContext = orbitCanvas[0].getContext("2d");
 
-    $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
+    $('input[name="model"]:radio').change(function () {
+        clearTimeout(redrawTimeout);
+        clearAllCanvases();
 
-    drawMajorAxis(backgroundContext, "lightblue");
-    drawMajorAxis(axisContext, "red")
-    drawBody(0, 0, "blue", 5); // central body
-    orbitBody();
+        let model = $('input[name=model]:checked').val();
+        if (model == 'anim') {
+            elements = animElements;
+        }
+        else if (model == 'mercury') {
+            elements = mercuryElements;
+        }
+
+        apihelion =
+            {
+                X: -1 * elements.a * (1 + elements.e),
+                Y: 0
+            };
+
+        perihelion =
+            {
+                X: elements.a * (1 - elements.e),
+                Y: 0
+            };
+
+        // declaration of variables is important e.g. cannot use e before it is declared
+        const centreOfEllipseInCanvas = 300 //
+        canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / elements.displayScaleFactor * elements.e;
+        canvas_focus_y_coords = centreOfEllipseInCanvas;
+
+
+        runAnimation();
+    });
+
+    $("input[name='model'][value='anim']").prop('checked', true);
+
 });
+
+function clearAllCanvases() {
+    clearMajorAxis;
+    backgroundContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+    orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
 
 function clearMajorAxis() {
     axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
@@ -163,7 +183,7 @@ function orbitBody() {
     rotateAxis(0, dOmega);
     drawMajorAxis(axisContext, "red");
 
-    setTimeout(orbitBody, 10);
+    redrawTimeout = setTimeout(orbitBody, 10);
 }
 
 function rotateAxis(Omega, omega) {
@@ -191,6 +211,23 @@ function transformCoords(Omega, omega, x, y) {
     let Y = R1[0] * x + R1[1] * y;
 
     return { X, Y };
+}
+
+class Elements {
+    constructor(GM, a, e, dOmega, displayScaleFactor) {
+        this.a = a; // km - semi major axis
+        this.GM = GM; // km^3/day^2
+        this.e = e; // eccentricity
+        this.dOmega = dOmega; // per day
+        this.displayScaleFactor = displayScaleFactor;
+    }
+
+    // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
+    // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
+    orbitPeriodInDays() {
+        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
+        return period;
+    }
 }
 
 function getMercuryElements() {
@@ -222,4 +259,7 @@ function getAnimationElements() {
     return elements;
 }
 
+// Need Elements class defined before can use it
+var animElements = getAnimationElements();
+var mercuryElements = getMercuryElements();
 
