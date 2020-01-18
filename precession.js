@@ -8,14 +8,17 @@ var axisContext;
 var axisCanvas;
 
 var time = 0;
+var OmegaTotal = 0;
 var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
 
 class Elements {
-    constructor(GM, a, e) {
-        this.a = a; // semi major axis
-        this.GM = GM; // we just choose GM to give a decent orbit speed
+    constructor(GM, a, e, dOmega) {
+        this.a = a; // km - semi major axis
+        this.GM = GM; // km^3/day^2
         this.e = e; // eccentricity
+        this.dOmega = dOmega; // per day
+
     }
 
     // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
@@ -24,29 +27,33 @@ class Elements {
         let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
         return period;
     }
-
-    dOmegaPerDay() {
-        let result = 3 * 2 * Math.PI / this.orbitPeriodInDays() * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
-        return result;
-        // , -0.2 * Math.PI / 360
-    }
 }
 
 //var animationElements = new Elements(3000, 150, 0.7);
 //elements = animationElements;
 
-const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
-const mercuryOrbitalEccentricity = 0.2056;
-const mercuryOrbitalPeriod_Days = 87.969; 
-const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
-const sunMeanRadius_Km = 695700; // km
-const sunJ2 = 2e-7;
+function getMercuryElements() {
+    const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
+    const mercuryOrbitalEccentricity = 0.2056;
+    const mercuryOrbitalPeriod_Days = 87.969;
+    const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+    const sunMeanRadius_Km = 695700; // km
+    const sunJ2 = 2e-7;
+    const convertSecondsToDays = 86400;
 
-const convertSecondsToDays = 86400;
+    let gm = sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays; // units KM and days
+    let a = mercurySemiMajorAxis_KmE6 * 1E6 // units KM
 
-var mercuryElements = new Elements(sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays, mercurySemiMajorAxis_KmE6 * 1E6, mercuryOrbitalEccentricity);
+    // per day
+    let dOmega = 3 * 2 * Math.PI / mercuryOrbitalPeriod_Days * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
+
+    let mercuryElements = new Elements(gm, a, mercuryOrbitalEccentricity, dOmega);
+
+    return mercuryElements;
+}
+
 //elements = animationElements;
-elements = mercuryElements;
+elements = getMercuryElements();
 
 const centreOfEllipseInCanvas = 300 //
 const display_scale_factor = (elements.a/150).toFixed(1);
@@ -154,22 +161,27 @@ function orbitBody() {
     let r = elements.a * (1 - elements.e * elements.e) / (1 + elements.e * cos_f);
 
     time = time + 1;
-    $("#time").html(time);
+    let years = Math.floor(time / 365);
+    $("#time").html(years);
 
     // animate
     ellipse_frame_x = r * cos_f;
     ellipse_frame_y = r * sin_f;
 
+    let dOmega = elements.dOmega;
+    OmegaTotal += dOmega;
+    $("#Omega").html(OmegaTotal.toExponential(10));
+
     // rotate the ellipse and calculate x and y in the inertial frame of reference
-    let inertialCoords = transformCoords(0, elements.dOmegaPerDay() * time, ellipse_frame_x, ellipse_frame_y)
+    let inertialCoords = transformCoords(0, dOmega * time, ellipse_frame_x, ellipse_frame_y)
 
     drawBody(inertialCoords.X, inertialCoords.Y, "black", 1);
         
     clearMajorAxis();
-    rotateAxis(0, elements.dOmegaPerDay());
+    rotateAxis(0, dOmega);
     drawMajorAxis();
 
-    setTimeout(orbitBody, 0.000001);
+    setTimeout(orbitBody, 1E-7);
 }
 
 function rotateAxis(Omega, omega) {
@@ -198,3 +210,4 @@ function transformCoords(Omega, omega, x, y) {
 
     return { X, Y };
 }
+
