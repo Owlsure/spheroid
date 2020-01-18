@@ -20,18 +20,39 @@ class Elements {
 
     // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
     // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
-    orbitPeriod() {
-        var period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
+    orbitPeriodInDays() {
+        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
         return period;
+    }
+
+    dOmegaPerDay() {
+        let result = 3 * 2 * Math.PI / this.orbitPeriodInDays() * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
+        return result;
+        // , -0.2 * Math.PI / 360
     }
 }
 
-var animationElements = new Elements(3000, 150, 0.7);
-elements = animationElements;
+//var animationElements = new Elements(3000, 150, 0.7);
+//elements = animationElements;
 
+const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
+const mercuryOrbitalEccentricity = 0.2056;
+const mercuryOrbitalPeriod_Days = 87.969; 
+const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+const sunMeanRadius_Km = 695700; // km
+const sunJ2 = 2e-7;
+
+const convertSecondsToDays = 86400;
+
+var mercuryElements = new Elements(sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays, mercurySemiMajorAxis_KmE6 * 1E6, mercuryOrbitalEccentricity);
+//elements = animationElements;
+elements = mercuryElements;
+
+const centreOfEllipseInCanvas = 300 //
+const display_scale_factor = (elements.a/150).toFixed(1);
 // declaration of variables is important e.g. cannot use e before it is declared
-const canvas_focus_x_coords = 300 + elements.a * elements.e;
-const canvas_focus_y_coords = 300;
+const canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / display_scale_factor * elements.e;
+const canvas_focus_y_coords = centreOfEllipseInCanvas;
 
 var apihelion =
     {
@@ -54,7 +75,7 @@ $(document).ready(function () {
     let orbitCanvas = $("#orbitCanvas");
     orbitContext = orbitCanvas[0].getContext("2d");
 
-    $("#orbitPeriod").html(elements.orbitPeriod().toFixed());
+    $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
 
     drawMajorAxis()
     drawBody(0, 0, "blue", 5); // central body
@@ -69,8 +90,16 @@ function drawMajorAxis() {
     axisContext.strokeStyle = "red";
 
     axisContext.beginPath();
-    axisContext.moveTo(canvas_focus_x_coords + apihelion.X, canvas_focus_y_coords + apihelion.Y);
-    axisContext.lineTo(canvas_focus_x_coords + perihelion.X, canvas_focus_y_coords + perihelion.Y);
+    let ax = apihelion.X / display_scale_factor;
+    let ay = apihelion.Y / display_scale_factor;
+
+    let px = perihelion.X / display_scale_factor;
+    let py = perihelion.Y / display_scale_factor;
+
+    axisContext.moveTo(canvas_focus_x_coords + ax, canvas_focus_y_coords + ay);
+
+    axisContext.lineTo(canvas_focus_x_coords + px, canvas_focus_y_coords + py);
+
     axisContext.stroke();
 }
 
@@ -78,7 +107,7 @@ function drawBody(x, y, color, radius) {
     // Draw the face
     orbitContext.beginPath();
     orbitContext.fillStyle = color;
-    orbitContext.arc(canvas_focus_x_coords + x, canvas_focus_y_coords + y, radius, 0, 2 * Math.PI);
+    orbitContext.arc(canvas_focus_x_coords + x / display_scale_factor, canvas_focus_y_coords + y / display_scale_factor, radius, 0, 2 * Math.PI);
     orbitContext.lineWidth = 1;
     orbitContext.closePath();
     orbitContext.stroke();
@@ -109,7 +138,7 @@ function calculateE(M) {
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let numOrbits = time / elements.orbitPeriod()
+    let numOrbits = time / elements.orbitPeriodInDays()
     let M = 2.0 * Math.PI * (numOrbits);
     $("#meanAnomaly").html(M.toFixed(2));
 
@@ -132,17 +161,15 @@ function orbitBody() {
     ellipse_frame_y = r * sin_f;
 
     // rotate the ellipse and calculate x and y in the inertial frame of reference
-    let dOmega = - 0.2 * Math.PI / 360
-
-    let inertialCoords = transformCoords(0, dOmega * time, ellipse_frame_x, ellipse_frame_y)
+    let inertialCoords = transformCoords(0, elements.dOmegaPerDay() * time, ellipse_frame_x, ellipse_frame_y)
 
     drawBody(inertialCoords.X, inertialCoords.Y, "black", 1);
-
+        
     clearMajorAxis();
-    rotateAxis(0, dOmega);
+    rotateAxis(0, elements.dOmegaPerDay());
     drawMajorAxis();
 
-    setTimeout(orbitBody, 10);
+    setTimeout(orbitBody, 0.000001);
 }
 
 function rotateAxis(Omega, omega) {
