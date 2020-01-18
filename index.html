@@ -37,15 +37,17 @@
             <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
             <p>M <span id="meanAnomaly"></span></p>
             <p>E <span id="eccentricAnomaly"></span></p>
-            <p>Orbit Period <span id="orbitPeriod"></span></p>
-            <p>Time <span id="time"></span></p>
+            <p>Orbit Period (days) <span id="orbitPeriod"></span></p>
+            <p>Years <span id="years"></span></p>
             <p>Precession Angle <span id="Omega"></span></p>
             <p>Number of Complete Orbits <span id="completeOrbits"></span></p>
 
-            <canvas id="axisCanvas" width="1000" height="1000"
+            <canvas id="backgroundCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
-            <canvas id="orbitCanvas" width="1000" height="1000"
+            <canvas id="axisCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 1;"></canvas>
+            <canvas id="orbitCanvas" width="1000" height="1000"
+                    style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
         </div>
 
         <div id="#pdf">

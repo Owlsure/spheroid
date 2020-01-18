@@ -13,12 +13,12 @@ var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
 
 class Elements {
-    constructor(GM, a, e, dOmega) {
+    constructor(GM, a, e, dOmega, displayScaleFactor) {
         this.a = a; // km - semi major axis
         this.GM = GM; // km^3/day^2
         this.e = e; // eccentricity
         this.dOmega = dOmega; // per day
-
+        this.displayScaleFactor = displayScaleFactor;
     }
 
     // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
@@ -29,36 +29,14 @@ class Elements {
     }
 }
 
-//var animationElements = new Elements(3000, 150, 0.7);
-//elements = animationElements;
+var animElements = getAnimationElements();
+var mercuryElements = getMercuryElements();
 
-function getMercuryElements() {
-    const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
-    const mercuryOrbitalEccentricity = 0.2056;
-    const mercuryOrbitalPeriod_Days = 87.969;
-    const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
-    const sunMeanRadius_Km = 695700; // km
-    const sunJ2 = 2e-7;
-    const convertSecondsToDays = 86400;
+var elements = animElements;
 
-    let gm = sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays; // units KM and days
-    let a = mercurySemiMajorAxis_KmE6 * 1E6 // units KM
-
-    // per day
-    let dOmega = 3 * 2 * Math.PI / mercuryOrbitalPeriod_Days * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
-
-    let mercuryElements = new Elements(gm, a, mercuryOrbitalEccentricity, dOmega);
-
-    return mercuryElements;
-}
-
-//elements = animationElements;
-elements = getMercuryElements();
-
-const centreOfEllipseInCanvas = 300 //
-const display_scale_factor = (elements.a/150).toFixed(1);
 // declaration of variables is important e.g. cannot use e before it is declared
-const canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / display_scale_factor * elements.e;
+const centreOfEllipseInCanvas = 300 //
+const canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / elements.displayScaleFactor * elements.e;
 const canvas_focus_y_coords = centreOfEllipseInCanvas;
 
 var apihelion =
@@ -76,6 +54,9 @@ var perihelion =
 // 1) cannot access $("#axisCanvas"), etc until document ready
 // 2) need to index [0] into canvas
 $(document).ready(function () {
+    backgroundCanvas = $("#backgroundCanvas");
+    backgroundContext = backgroundCanvas[0].getContext("2d");
+
     axisCanvas = $("#axisCanvas");
     axisContext = axisCanvas[0].getContext("2d");
 
@@ -84,7 +65,8 @@ $(document).ready(function () {
 
     $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
 
-    drawMajorAxis()
+    drawMajorAxis(backgroundContext, "lightblue");
+    drawMajorAxis(axisContext, "red")
     drawBody(0, 0, "blue", 5); // central body
     orbitBody();
 });
@@ -93,28 +75,28 @@ function clearMajorAxis() {
     axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
 }
 
-function drawMajorAxis() {
-    axisContext.strokeStyle = "red";
+function drawMajorAxis(context, color) {
+    context.strokeStyle = color;
 
-    axisContext.beginPath();
-    let ax = apihelion.X / display_scale_factor;
-    let ay = apihelion.Y / display_scale_factor;
+    context.beginPath();
+    let ax = apihelion.X / elements.displayScaleFactor;
+    let ay = apihelion.Y / elements.displayScaleFactor;
 
-    let px = perihelion.X / display_scale_factor;
-    let py = perihelion.Y / display_scale_factor;
+    let px = perihelion.X / elements.displayScaleFactor;
+    let py = perihelion.Y / elements.displayScaleFactor;
 
-    axisContext.moveTo(canvas_focus_x_coords + ax, canvas_focus_y_coords + ay);
+    context.moveTo(canvas_focus_x_coords + ax, canvas_focus_y_coords + ay);
 
-    axisContext.lineTo(canvas_focus_x_coords + px, canvas_focus_y_coords + py);
+    context.lineTo(canvas_focus_x_coords + px, canvas_focus_y_coords + py);
 
-    axisContext.stroke();
+    context.stroke();
 }
 
 function drawBody(x, y, color, radius) {
     // Draw the face
     orbitContext.beginPath();
     orbitContext.fillStyle = color;
-    orbitContext.arc(canvas_focus_x_coords + x / display_scale_factor, canvas_focus_y_coords + y / display_scale_factor, radius, 0, 2 * Math.PI);
+    orbitContext.arc(canvas_focus_x_coords + x / elements.displayScaleFactor, canvas_focus_y_coords + y / elements.displayScaleFactor, radius, 0, 2 * Math.PI);
     orbitContext.lineWidth = 1;
     orbitContext.closePath();
     orbitContext.stroke();
@@ -162,7 +144,7 @@ function orbitBody() {
 
     time = time + 1;
     let years = Math.floor(time / 365);
-    $("#time").html(years);
+    $("#years").html(years);
 
     // animate
     ellipse_frame_x = r * cos_f;
@@ -179,9 +161,9 @@ function orbitBody() {
         
     clearMajorAxis();
     rotateAxis(0, dOmega);
-    drawMajorAxis();
+    drawMajorAxis(axisContext, "red");
 
-    setTimeout(orbitBody, 1E-7);
+    setTimeout(orbitBody, 10);
 }
 
 function rotateAxis(Omega, omega) {
@@ -210,4 +192,34 @@ function transformCoords(Omega, omega, x, y) {
 
     return { X, Y };
 }
+
+function getMercuryElements() {
+    const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
+    const mercuryOrbitalEccentricity = 0.2056;
+    const mercuryOrbitalPeriod_Days = 87.969;
+    const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+    const sunMeanRadius_Km = 695700; // km
+    const sunJ2 = 2e-7;
+    const convertSecondsToDays = 86400;
+
+    let gm = sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays; // units KM and days
+    let a = mercurySemiMajorAxis_KmE6 * 1E6 // units KM
+
+    // per day
+    let dOmega = 3 * 2 * Math.PI / mercuryOrbitalPeriod_Days * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
+
+    dOmega *= 1E8;
+    
+    let elements = new Elements(gm, a, mercuryOrbitalEccentricity, dOmega, (a/150).toFixed(1));
+
+    return elements;
+}
+
+function getAnimationElements() {
+    let dOmega = -0.2 * Math.PI / 360;
+    let elements = new Elements(3000, 150, 0.7, dOmega, 1);
+
+    return elements;
+}
+
 
