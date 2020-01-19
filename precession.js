@@ -6,6 +6,7 @@ http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 
 const yearsInACentury = 100;
 const daysInAYear = 365;
+const convertSecondsToDays = 86400;
 
 var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
@@ -60,7 +61,7 @@ function runAnimation() {
 
     drawMajorAxis(backgroundContext, "lightblue");
     drawMajorAxis(axisContext, "red")
-    drawBody(0, 0, "blue", 5); // central body
+    drawBody(backgroundContext, 0, 0, "yellow", 5); // central body
     orbitBody();
 }
 
@@ -129,15 +130,15 @@ function drawMajorAxis(context, color) {
     context.stroke();
 }
 
-function drawBody(x, y, color, radius) {
+function drawBody(context, x, y, color, radius) {
     // Draw the face
-    orbitContext.beginPath();
-    orbitContext.fillStyle = color;
-    orbitContext.arc(canvas_focus_x_coords + x / model.displayScaleFactor, canvas_focus_y_coords + y / model.displayScaleFactor, radius, 0, 2 * Math.PI);
-    orbitContext.lineWidth = 1;
-    orbitContext.closePath();
-    orbitContext.stroke();
-    orbitContext.fill();
+    context.beginPath();
+    context.fillStyle = color;
+    context.arc(canvas_focus_x_coords + x / model.displayScaleFactor, canvas_focus_y_coords + y / model.displayScaleFactor, radius, 0, 2 * Math.PI);
+    context.lineWidth = 1;
+    context.closePath();
+    context.stroke();
+    context.fill();
 }
 
 function calculateE(M) {
@@ -167,22 +168,22 @@ var orbitCounter = 0;
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let n = 2.0 * Math.PI / model.orbitPeriodInDays(); // mean angular velocity
+    let n = 2.0 * Math.PI / model.orbitPeriodInDays(); // mean angular velocity = 2*PI/T
     let M = n * daysElapsed;
     $("#meanAnomaly").html(M.toLocaleString());
 
-    let completeOrbits = Math.floor(M / 2 / Math.PI);
+    let completeOrbits = Math.floor(M / (2 * Math.PI));
     $("#completeOrbits").html(completeOrbits.toLocaleString());
 
     let changeInDays = 1;
     if (model.skipDays > 0) {
-        // skip every 11 orbits
+        // skip days every 11 orbits
         if (completeOrbits > lastOrbitCount) {
             orbitCounter++;
 
             if (orbitCounter == 11) {
                 orbitCounter = 0
-                changeInDays = model.skipDays; 
+                changeInDays = model.skipDays;
             }
         }
     }
@@ -208,12 +209,12 @@ function orbitBody() {
 
     let dOmega = model.dOmega * changeInDays;
     OmegaTotal += dOmega;
-    $("#Omega").html(OmegaTotal.toExponential(10));
+    $("#Omega").html(OmegaTotal.toExponential(3));
 
     // rotate the ellipse and calculate x and y in the inertial frame of reference
-    let inertialCoords = transformCoords(0, dOmega, ellipse_frame_x, ellipse_frame_y)
+    let inertialCoords = transformCoords(0, OmegaTotal, ellipse_frame_x, ellipse_frame_y)
 
-    drawBody(inertialCoords.X, inertialCoords.Y, "black", 1);
+    drawBody(orbitContext, inertialCoords.X, inertialCoords.Y, "black", 1);
         
     clearMajorAxis();
     rotateAxis(0, dOmega);
@@ -256,7 +257,6 @@ function getMercuryModel() {
     const sunGM_kME6_PerSec2 = 132712; //  1E6 km3/s2) https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
     const sunMeanRadius_Km = 695700; // km
     const sunJ2 = 2e-7;
-    const convertSecondsToDays = 86400;
 
     let gm = sunGM_kME6_PerSec2 * 1E6 * convertSecondsToDays * convertSecondsToDays; // units KM and days
     let a = mercurySemiMajorAxis_KmE6 * 1E6 // units KM
@@ -265,7 +265,7 @@ function getMercuryModel() {
     let dOmega = 3 * (2 * Math.PI / mercuryOrbitalPeriod_Days) * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
     dOmega = dOmega / Math.pow(1 - Math.pow(mercuryOrbitalEccentricity,2), 2);
 
-    const deltaCenturies = 100000;
+    const deltaCenturies = 1000000;
     let skipDays = daysInAYear * yearsInACentury * deltaCenturies;
 
     let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries: ');
@@ -274,6 +274,7 @@ function getMercuryModel() {
 }
 
 function getAnimationModel() {
+    // pick numbers to give a "nice" animation
     let dOmega = -0.2 * Math.PI / 360;
     let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years: ');
 
@@ -281,22 +282,30 @@ function getAnimationModel() {
 }
 
 function clearAllCanvases() {
-    clearMajorAxis;
-    backgroundContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
-    orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+    clearMajorAxis();
+    clearBackgroundCanvis();
+    clearOrbitCanvis();
 }
 
 function clearMajorAxis() {
     axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
 }
 
+function clearOrbitCanvis() {
+    orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
+
+function clearBackgroundCanvis() {
+    backgroundContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
+
 function displayTimeElapsed(daysElapsed, asCenturies) {
     if (asCenturies) {
-        let centuries = Math.floor(daysElapsed / 365 / 100);
+        let centuries = Math.floor(daysElapsed / daysInAYear / yearsInACentury);
         return centuries;
     }
     else {
-        let years = Math.floor(daysElapsed / 365);
+        let years = Math.floor(daysElapsed / daysInAYear);
         return years;
     }
 }
