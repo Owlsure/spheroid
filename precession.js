@@ -4,6 +4,9 @@ Code adapted from
 http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 */
 
+const yearsInACentury = 100;
+const daysInAYear = 365;
+
 var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
 
@@ -16,20 +19,44 @@ var axisCanvas;
 var daysElapsed;
 var OmegaTotal;
 
-var elements;
 var apihelion;
 var perihelion;
 var canvas_focus_x_coords;
 var canvas_focus_y_coords;
 
 var redrawTimeout;
+var modelChosen;
 var model;
+
+class Model {
+    constructor(GM, a, e, dOmega, displayScaleFactor, skipDays, elapsedTimeAsCenturies, elapsedTimeLabel) {
+        this.a = a; // km - semi major axis
+        this.GM = GM; // km^3/day^2
+        this.e = e; // eccentricity
+        this.dOmega = dOmega; // per day
+        this.displayScaleFactor = displayScaleFactor;
+        this.skipDays = skipDays;
+        this.elapsedTimeAsCenturies = elapsedTimeAsCenturies;
+        this.elapsedTimeLabel = elapsedTimeLabel;
+    }
+
+    // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
+    // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
+    orbitPeriodInDays() {
+        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
+        return period;
+    }
+}
+
+// Need Model class defined before can use it
+var animModel = getAnimationModel();
+var mercuryModel = getMercuryModel();
 
 function runAnimation() {
     daysElapsed = 0;
     OmegaTotal = 0;
 
-    $("#orbitPeriod").html(elements.orbitPeriodInDays().toFixed());
+    $("#orbitPeriod").html(model.orbitPeriodInDays().toFixed());
 
     drawMajorAxis(backgroundContext, "lightblue");
     drawMajorAxis(axisContext, "red")
@@ -53,48 +80,47 @@ $(document).ready(function () {
         clearTimeout(redrawTimeout);
         clearAllCanvases();
 
-        model = $('input[name=model]:checked').val();
-        if (model == 'anim') {
-            elements = animElements;
+        modelChosen = $('input[name=model]:checked').val();
+        if (modelChosen == 'anim') {
+            model = animModel;
         }
-        else if (model == 'mercury') {
-            elements = mercuryElements;
+        else if (modelChosen == 'mercury') {
+            model = mercuryModel;
         }
 
         apihelion =
             {
-                X: -1 * elements.a * (1 + elements.e),
+                X: -1 * model.a * (1 + model.e),
                 Y: 0
             };
 
         perihelion =
             {
-                X: elements.a * (1 - elements.e),
+                X: model.a * (1 - model.e),
                 Y: 0
             };
 
         // declaration of variables is important e.g. cannot use e before it is declared
         const centreOfEllipseInCanvas = 300 //
-        canvas_focus_x_coords = centreOfEllipseInCanvas + elements.a / elements.displayScaleFactor * elements.e;
+        canvas_focus_x_coords = centreOfEllipseInCanvas + model.a / model.displayScaleFactor * model.e;
         canvas_focus_y_coords = centreOfEllipseInCanvas;
 
-
+        $("#yearsLabel").html(model.elapsedTimeLabel);
         runAnimation();
     });
 
     $("input[name='model'][value='mercury']").prop('checked', true);
-
 });
 
 function drawMajorAxis(context, color) {
     context.strokeStyle = color;
 
     context.beginPath();
-    let ax = apihelion.X / elements.displayScaleFactor;
-    let ay = apihelion.Y / elements.displayScaleFactor;
+    let ax = apihelion.X / model.displayScaleFactor;
+    let ay = apihelion.Y / model.displayScaleFactor;
 
-    let px = perihelion.X / elements.displayScaleFactor;
-    let py = perihelion.Y / elements.displayScaleFactor;
+    let px = perihelion.X / model.displayScaleFactor;
+    let py = perihelion.Y / model.displayScaleFactor;
 
     context.moveTo(canvas_focus_x_coords + ax, canvas_focus_y_coords + ay);
 
@@ -107,7 +133,7 @@ function drawBody(x, y, color, radius) {
     // Draw the face
     orbitContext.beginPath();
     orbitContext.fillStyle = color;
-    orbitContext.arc(canvas_focus_x_coords + x / elements.displayScaleFactor, canvas_focus_y_coords + y / elements.displayScaleFactor, radius, 0, 2 * Math.PI);
+    orbitContext.arc(canvas_focus_x_coords + x / model.displayScaleFactor, canvas_focus_y_coords + y / model.displayScaleFactor, radius, 0, 2 * Math.PI);
     orbitContext.lineWidth = 1;
     orbitContext.closePath();
     orbitContext.stroke();
@@ -125,12 +151,12 @@ function calculateE(M) {
     // iterate until within 10-6
     while (loopCount++ < LOOP_LIMIT) {
         // this should always converge in a small number of iterations - but be paranoid
-        u_next = u + (M - (u - elements.e * Math.sin(u))) / (1 - elements.e * Math.cos(u));
+        u_next = u + (M - (u - model.e * Math.sin(u))) / (1 - model.e * Math.cos(u));
         if (Math.abs(u_next - u) < 1E-6)
             break;
         u = u_next;
     }
-    $("#eccentricAnomaly").html(u.toFixed(2))    ;
+    $("#eccentricAnomaly").html(u.toLocaleString());
 
     return u;
 }
@@ -141,22 +167,22 @@ var orbitCounter = 0;
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let numOrbits = daysElapsed / elements.orbitPeriodInDays()
+    let numOrbits = daysElapsed / model.orbitPeriodInDays()
     let M = 2.0 * Math.PI * (numOrbits);
-    $("#meanAnomaly").html(M.toFixed(2));
+    $("#meanAnomaly").html(M.toLocaleString());
 
     let completeOrbits = Math.floor(numOrbits);
-    $("#completeOrbits").html(completeOrbits);
+    $("#completeOrbits").html(completeOrbits.toLocaleString());
 
-    const deltaCenturies = 100000;
     let changeInDays = 1;
-    if (model == 'mercury') {
+    if (model.skipDays > 0) {
+        // skip every 11 orbits
         if (completeOrbits > lastOrbitCount) {
             orbitCounter++;
 
             if (orbitCounter == 11) {
                 orbitCounter = 0
-                changeInDays = 365 * 100 * deltaCenturies; 
+                changeInDays = model.skipDays; 
             }
         }
     }
@@ -169,18 +195,18 @@ function orbitBody() {
 
     // 2) eccentric anomoly is angle from center of ellipse, not focus (where centerObject is). Convert
     //    to true anomoly, f - the angle measured from the focus. (see Fig 3.2 in Gravity) 
-    let cos_f = (Math.cos(u) - elements.e) / (1 - elements.e * Math.cos(u));
-    let sin_f = (Math.sqrt(1 - elements.e * elements.e) * Math.sin(u)) / (1 - elements.e * Math.cos(u));
-    let r = elements.a * (1 - elements.e * elements.e) / (1 + elements.e * cos_f);
+    let cos_f = (Math.cos(u) - model.e) / (1 - model.e * Math.cos(u));
+    let sin_f = (Math.sqrt(1 - model.e * model.e) * Math.sin(u)) / (1 - model.e * Math.cos(u));
+    let r = model.a * (1 - model.e * model.e) / (1 + model.e * cos_f);
 
-    let years = Math.floor(daysElapsed / 365);
-    $("#years").html(years);
+    let elapsed = displayTimeElapsed(daysElapsed, model.elapsedTimeAsCenturies);
+    $("#years").html(elapsed.toLocaleString());
 
     // animate
     ellipse_frame_x = r * cos_f;
     ellipse_frame_y = r * sin_f;
 
-    let dOmega = elements.dOmega * changeInDays;
+    let dOmega = model.dOmega * changeInDays;
     OmegaTotal += dOmega;
     $("#Omega").html(OmegaTotal.toExponential(10));
 
@@ -223,24 +249,7 @@ function transformCoords(Omega, omega, x, y) {
     return { X, Y };
 }
 
-class Elements {
-    constructor(GM, a, e, dOmega, displayScaleFactor) {
-        this.a = a; // km - semi major axis
-        this.GM = GM; // km^3/day^2
-        this.e = e; // eccentricity
-        this.dOmega = dOmega; // per day
-        this.displayScaleFactor = displayScaleFactor;
-    }
-
-    // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
-    // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
-    orbitPeriodInDays() {
-        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
-        return period;
-    }
-}
-
-function getMercuryElements() {
+function getMercuryModel() {
     const mercurySemiMajorAxis_KmE6 = 57.91; // 1E6 km
     const mercuryOrbitalEccentricity = 0.2056;
     const mercuryOrbitalPeriod_Days = 87.969;
@@ -256,21 +265,20 @@ function getMercuryElements() {
     let dOmega = 3 * (2 * Math.PI / mercuryOrbitalPeriod_Days) * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
     dOmega = dOmega / Math.pow(1 - Math.pow(mercuryOrbitalEccentricity,2), 2);
 
-    let elements = new Elements(gm, a, mercuryOrbitalEccentricity, dOmega, (a/150).toFixed(1));
+    const deltaCenturies = 100000;
+    let skipDays = daysInAYear * yearsInACentury * deltaCenturies;
 
-    return elements;
+    let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries: ');
+
+    return model;
 }
 
-function getAnimationElements() {
+function getAnimationModel() {
     let dOmega = -0.2 * Math.PI / 360;
-    let elements = new Elements(3000, 150, 0.7, dOmega, 1);
+    let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years: ');
 
-    return elements;
+    return model;
 }
-
-// Need Elements class defined before can use it
-var animElements = getAnimationElements();
-var mercuryElements = getMercuryElements();
 
 function clearAllCanvases() {
     clearMajorAxis;
@@ -280,5 +288,16 @@ function clearAllCanvases() {
 
 function clearMajorAxis() {
     axisContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
+
+function displayTimeElapsed(daysElapsed, asCenturies) {
+    if (asCenturies) {
+        let centuries = Math.floor(daysElapsed / 365 / 100);
+        return centuries;
+    }
+    else {
+        let years = Math.floor(daysElapsed / 365);
+        return years;
+    }
 }
 
