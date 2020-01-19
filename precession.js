@@ -167,11 +167,11 @@ var orbitCounter = 0;
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let numOrbits = daysElapsed / model.orbitPeriodInDays()
-    let M = 2.0 * Math.PI * (numOrbits);
+    let n = 2.0 * Math.PI / model.orbitPeriodInDays(); // mean angular velocity
+    let M = n * daysElapsed;
     $("#meanAnomaly").html(M.toLocaleString());
 
-    let completeOrbits = Math.floor(numOrbits);
+    let completeOrbits = Math.floor(M / 2 / Math.PI);
     $("#completeOrbits").html(completeOrbits.toLocaleString());
 
     let changeInDays = 1;
