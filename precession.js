@@ -7,6 +7,7 @@ http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 const yearsInACentury = 100;
 const daysInAYear = 365;
 const convertSecondsToDays = 86400;
+const sunColor = "yellow";
 
 var ellipse_frame_x = 0; // origin of x is at the focus
 var ellipse_frame_y = 0; // origin of y is at the focus
@@ -44,7 +45,7 @@ class Model {
     // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
     // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
     orbitPeriodInDays() {
-        let period = 2.0 * Math.PI * Math.sqrt(this.a * this.a * this.a / (this.GM)); // 
+        let period = 2.0 * Math.PI * Math.sqrt(Math.pow(this.a,3) / (this.GM)); // 
         return period;
     }
 }
@@ -61,7 +62,7 @@ function runAnimation() {
 
     drawMajorAxis(backgroundContext, "lightblue");
     drawMajorAxis(axisContext, "red")
-    drawBody(backgroundContext, 0, 0, "yellow", 5); // central body
+    drawBody(backgroundContext, 0, 0, sunColor, 5); // central body
     orbitBody();
 }
 
@@ -111,6 +112,7 @@ $(document).ready(function () {
     });
 
     $("input[name='model'][value='mercury']").prop('checked', true);
+    $("input[name='model']").trigger('change');
 });
 
 function drawMajorAxis(context, color) {
@@ -177,11 +179,11 @@ function orbitBody() {
 
     let changeInDays = 1;
     if (model.skipDays > 0) {
-        // skip days every 11 orbits
+        // skip days every 6 orbits
         if (completeOrbits > lastOrbitCount) {
             orbitCounter++;
 
-            if (orbitCounter == 11) {
+            if (orbitCounter == 6) {
                 orbitCounter = 0
                 changeInDays = model.skipDays;
             }
