@@ -113,6 +113,7 @@ $(document).ready(function () {
 
     $("input[name='model'][value='mercury']").prop('checked', true);
     $("input[name='model']").trigger('change');
+    $("input[name='model'][value='mercury']").prop('checked', true);
 });
 
 function drawMajorAxis(context, color) {
