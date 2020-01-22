@@ -212,7 +212,7 @@ function orbitBody() {
 
     let dOmega = model.dOmega * changeInDays;
     OmegaTotal += dOmega;
-    $("#Omega").html(OmegaTotal.toExponential(3));
+    $("#Omega").html(convertRadiansToDegrees(OmegaTotal));
 
     // rotate the ellipse and calculate x and y in the inertial frame of reference
     let inertialCoords = transformCoords(0, OmegaTotal, ellipse_frame_x, ellipse_frame_y)
@@ -268,7 +268,7 @@ function getMercuryModel() {
     let dOmega = 3 * (2 * Math.PI / mercuryOrbitalPeriod_Days) * sunMeanRadius_Km * sunMeanRadius_Km * -sunJ2 / 2 / (mercurySemiMajorAxis_KmE6 * 1E6) / (mercurySemiMajorAxis_KmE6 * 1E6);
     dOmega = dOmega / Math.pow(1 - Math.pow(mercuryOrbitalEccentricity,2), 2);
 
-    const deltaCenturies = 1000000;
+    const deltaCenturies = 150000;
     let skipDays = daysInAYear * yearsInACentury * deltaCenturies;
 
     let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries: ');
@@ -311,5 +311,25 @@ function displayTimeElapsed(daysElapsed, asCenturies) {
         let years = Math.floor(daysElapsed / daysInAYear);
         return years;
     }
+}
+
+function convertRadiansToDegrees(radiansIn) {
+
+    var radians = Math.abs(radiansIn)
+    var degrees = radians / 2 / Math.PI * 360;
+
+    var arcDegrees = Math.floor(degrees);
+
+    var minutes = (degrees - arcDegrees) * 60;
+
+    var arcMinutes = Math.floor(minutes);
+
+    var seconds = (minutes - arcMinutes);
+
+    var arcSeconds = seconds.toFixed();
+
+    var result = arcDegrees.toString() + "\xB0 " + arcMinutes + "' " + arcSeconds + "'' ";
+
+    return result;
 }
 
