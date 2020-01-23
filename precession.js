@@ -271,7 +271,7 @@ function getMercuryModel() {
     const deltaCenturies = 150000;
     let skipDays = daysInAYear * yearsInACentury * deltaCenturies;
 
-    let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries: ');
+    let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries Elapsed: ');
 
     return model;
 }
@@ -279,7 +279,7 @@ function getMercuryModel() {
 function getAnimationModel() {
     // pick numbers to give a "nice" animation
     let dOmega = -0.2 * Math.PI / 360;
-    let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years: ');
+    let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years Elapsed: ');
 
     return model;
 }
