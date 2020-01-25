@@ -40,13 +40,10 @@ class Model {
         this.skipDays = skipDays;
         this.elapsedTimeAsCenturies = elapsedTimeAsCenturies;
         this.elapsedTimeLabel = elapsedTimeLabel;
-    }
-
-    // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
-    // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
-    orbitPeriodInDays() {
-        let period = 2.0 * Math.PI * Math.sqrt(Math.pow(this.a,3) / (this.GM)); // 
-        return period;
+        
+        // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
+        // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
+        this.orbitPeriodInDays = 2.0 * Math.PI * Math.sqrt(Math.pow(a,3) / GM);
     }
 }
 
@@ -58,7 +55,7 @@ function runAnimation() {
     daysElapsed = 0;
     OmegaTotal = 0;
 
-    $("#orbitPeriod").html(model.orbitPeriodInDays().toFixed());
+    $("#orbitPeriod").html(model.orbitPeriodInDays.toFixed());
 
     drawMajorAxis(backgroundContext, "lightblue");
     drawMajorAxis(axisContext, "red")
@@ -171,7 +168,7 @@ var orbitCounter = 0;
 function orbitBody() {
 
     // 1) find the relative time in the orbit and convert to Radians
-    let n = 2.0 * Math.PI / model.orbitPeriodInDays(); // mean angular velocity = 2*PI/T
+    let n = 2.0 * Math.PI / model.orbitPeriodInDays; // mean angular velocity = 2*PI/T
     let M = n * daysElapsed;
     $("#meanAnomaly").html(M.toLocaleString());
 
