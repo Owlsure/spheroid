@@ -47,6 +47,7 @@
 
             <input type="radio" name="model" value="anim"> Model<br>
             <input type="radio" name="model" value="mercury"> Mercury (precession due to Sun oblateness)<br>
+            <input type="radio" name="model" value="circular"> Circular (Osculating)<br>
 
             <canvas id="backgroundCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
@@ -54,6 +55,8 @@
                     style="position: absolute; left: 0; top: 50; z-index: 1;"></canvas>
             <canvas id="orbitCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
+            <canvas id="circularCanvas" width="1000" height="1000"
+                    style="position: absolute; left: 0; top: 50; z-index: 3;"></canvas>
         </div>
 
         <div id="#pdf">

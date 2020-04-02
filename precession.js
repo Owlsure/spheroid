@@ -15,6 +15,7 @@ var ellipse_frame_y = 0; // origin of y is at the focus
 var backgroundContext;
 var orbitContext;
 var axisContext;
+var circularContext;
 
 var axisCanvas;
 
@@ -31,7 +32,7 @@ var modelChosen;
 var model;
 
 class Model {
-    constructor(GM, a, e, dOmega, displayScaleFactor, skipDays, elapsedTimeAsCenturies, elapsedTimeLabel) {
+    constructor(GM, a, e, dOmega, displayScaleFactor, skipDays, elapsedTimeAsCenturies, elapsedTimeLabel, isCircularModel) {
         this.a = a; // km - semi major axis
         this.GM = GM; // km^3/day^2
         this.e = e; // eccentricity
@@ -40,7 +41,9 @@ class Model {
         this.skipDays = skipDays;
         this.elapsedTimeAsCenturies = elapsedTimeAsCenturies;
         this.elapsedTimeLabel = elapsedTimeLabel;
-        
+
+        this.isCircularModel = isCircularModel;
+
         // Keplers law n = 2*PI/T=SQRT(GM/a^3) 
         // Since n = 2*PI/T this gives T = 2*PI*SQRT(a^3/GM) implies the bigger GM, the smaller orbital period
         this.orbitPeriodInDays = 2.0 * Math.PI * Math.sqrt(Math.pow(a,3) / GM);
@@ -50,8 +53,11 @@ class Model {
 // Need Model class defined before can use it
 var animModel = getAnimationModel();
 var mercuryModel = getMercuryModel();
+var circularModel = getCircleModel();
 
 function runAnimation() {
+    clearCircularCanvis();
+
     daysElapsed = 0;
     OmegaTotal = 0;
 
@@ -61,6 +67,18 @@ function runAnimation() {
     drawMajorAxis(axisContext, "red")
     drawBody(backgroundContext, 0, 0, sunColor, 5); // central body
     orbitBody();
+}
+
+function drawOsculatingEllipse(x, y) {
+    clearCircularCanvis();
+
+    let xx = canvas_focus_x_coords + x / model.displayScaleFactor;
+    let yy = canvas_focus_y_coords + y / model.displayScaleFactor;
+
+    circularContext.beginPath();
+    circularContext.ellipse(xx-model.a, yy-model.a, model.a*1.2, model.a, Math.PI / 4, 0, 2 * Math.PI);
+    circularContext.stroke();
+
 }
 
 // 1) cannot access $("#axisCanvas"), etc until document ready
@@ -75,6 +93,9 @@ $(document).ready(function () {
     let orbitCanvas = $("#orbitCanvas");
     orbitContext = orbitCanvas[0].getContext("2d");
 
+    let circularCanvas = $("#circularCanvas");
+    circularContext = circularCanvas[0].getContext("2d");
+
     $('input[name="model"]:radio').change(function () {
         clearTimeout(redrawTimeout);
         clearAllCanvases();
@@ -85,6 +106,9 @@ $(document).ready(function () {
         }
         else if (modelChosen == 'mercury') {
             model = mercuryModel;
+        }
+        else if (modelChosen == 'circular') {
+            model = circularModel;
         }
 
         apihelion =
@@ -215,10 +239,17 @@ function orbitBody() {
     let inertialCoords = transformCoords(0, OmegaTotal, ellipse_frame_x, ellipse_frame_y)
 
     drawBody(orbitContext, inertialCoords.X, inertialCoords.Y, "black", 1);
+    if (model.isCircularModel) {
+        drawOsculatingEllipse(inertialCoords.X, inertialCoords.Y);
+    }
         
     clearMajorAxis();
     rotateAxis(0, dOmega);
     drawMajorAxis(axisContext, "red");
+
+    if (model.isCircularModel) {
+        daysElapsed = 0;
+    }
 
     redrawTimeout = setTimeout(orbitBody, 10);
 }
@@ -268,7 +299,7 @@ function getMercuryModel() {
     const deltaCenturies = 150000;
     let skipDays = daysInAYear * yearsInACentury * deltaCenturies;
 
-    let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries Elapsed: ');
+    let model = new Model(gm, a, mercuryOrbitalEccentricity, dOmega, (a / 150).toFixed(1), skipDays, true, 'Centuries Elapsed: ', false);
 
     return model;
 }
@@ -276,10 +307,24 @@ function getMercuryModel() {
 function getAnimationModel() {
     // pick numbers to give a "nice" animation
     let dOmega = -0.2 * Math.PI / 360;
-    let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years Elapsed: ');
+    let model = new Model(3000, 150, 0.7, dOmega, 1, 0, false, 'Years Elapsed: ', false);
 
     return model;
 }
+
+function getCircleModel() {
+    let GM = 200;
+    let a = 100;
+
+    // make the precession the same rate as n
+    let dOmega = Math.sqrt(GM / Math.pow(a, 3)); // per day
+
+    let model = new Model(GM, a, 0, dOmega, 1, 0, false, 'Years Elapsed: ', true);
+
+    return model;
+}
+
+
 
 function clearAllCanvases() {
     clearMajorAxis();
@@ -293,6 +338,10 @@ function clearMajorAxis() {
 
 function clearOrbitCanvis() {
     orbitContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
+}
+
+function clearCircularCanvis() {
+    circularContext.clearRect(0, 0, axisCanvas[0].width, axisCanvas[0].height);
 }
 
 function clearBackgroundCanvis() {
@@ -329,4 +378,5 @@ function convertRadiansToDegrees(radiansIn) {
 
     return result;
 }
+
 
