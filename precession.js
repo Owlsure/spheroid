@@ -21,6 +21,10 @@ var axisCanvas;
 
 var daysElapsed;
 var OmegaTotal;
+var lastOrbitCount;
+var orbitCounter;
+var completeOrbits;
+
 
 var apihelion;
 var perihelion;
@@ -60,6 +64,9 @@ function runAnimation() {
 
     daysElapsed = 0;
     OmegaTotal = 0;
+    lastOrbitCount = 0
+    orbitCounter = 0;
+    completeOrbits = 0;
 
     $("#orbitPeriod").html(model.orbitPeriodInDays.toFixed());
 
@@ -69,14 +76,22 @@ function runAnimation() {
     orbitBody();
 }
 
-function drawOsculatingEllipse(x, y) {
+function drawOsculatingEllipse(x, y, M) {
     clearCircularCanvis();
 
-    let xx = canvas_focus_x_coords + x / model.displayScaleFactor;
-    let yy = canvas_focus_y_coords + y / model.displayScaleFactor;
+    let x_satellite = canvas_focus_x_coords + x / model.displayScaleFactor;
+    let y_satellite = canvas_focus_y_coords + y / model.displayScaleFactor;
+
+    let semi_major_axis = model.a * 1.2;
+    let semi_minor_axis = model.a * 1.05;
+
+    let adjust_x = semi_major_axis * Math.cos(M)
+    let adjust_y = semi_major_axis * Math.sin(M)
+
+    circularContext.strokeStyle = "green";
 
     circularContext.beginPath();
-    circularContext.ellipse(xx-model.a, yy-model.a, model.a*1.2, model.a, Math.PI / 4, 0, 2 * Math.PI);
+    circularContext.ellipse(x_satellite - adjust_x, y_satellite - adjust_y, semi_major_axis, semi_minor_axis, M, 0, 2 * Math.PI);
     circularContext.stroke();
 
 }
@@ -186,20 +201,23 @@ function calculateE(M) {
     return u;
 }
 
-var lastOrbitCount = 0
-var orbitCounter = 0;
-
 function orbitBody() {
+
+    if (model.isCircularModel) {
+        let ss = 1;
+    }
+    
+    let changeInDays = 1;
+    daysElapsed += changeInDays;
 
     // 1) find the relative time in the orbit and convert to Radians
     let n = 2.0 * Math.PI / model.orbitPeriodInDays; // mean angular velocity = 2*PI/T
     let M = n * daysElapsed;
     $("#meanAnomaly").html(M.toLocaleString());
 
-    let completeOrbits = Math.floor(M / (2 * Math.PI));
+    completeOrbits = Math.floor(M / (2 * Math.PI));
     $("#completeOrbits").html(completeOrbits.toLocaleString());
 
-    let changeInDays = 1;
     if (model.skipDays > 0) {
         // skip days every 6 orbits
         if (completeOrbits > lastOrbitCount) {
@@ -208,18 +226,20 @@ function orbitBody() {
             if (orbitCounter == 6) {
                 orbitCounter = 0
                 changeInDays = model.skipDays;
+
+                daysElapsed += changeInDays - 1;
+                M = n * daysElapsed;
             }
         }
     }
 
-    daysElapsed += changeInDays;
     lastOrbitCount = completeOrbits;
 
     // 2) Seed with mean anomaly and solve Kepler's eqn for E
     let u = calculateE(M);
 
-    // 2) eccentric anomoly is angle from center of ellipse, not focus (where centerObject is). Convert
-    //    to true anomoly, f - the angle measured from the focus. (see Fig 3.2 in Gravity) 
+    // 2) eccentric anomaly is angle from center of ellipse, not focus (where centerObject is). Convert
+    //    to true anomaly, f - the angle measured from the focus. (see Fig 3.2 in Gravity) 
     let cos_f = (Math.cos(u) - model.e) / (1 - model.e * Math.cos(u));
     let sin_f = (Math.sqrt(1 - model.e * model.e) * Math.sin(u)) / (1 - model.e * Math.cos(u));
     let r = model.a * (1 - model.e * model.e) / (1 + model.e * cos_f);
@@ -235,12 +255,23 @@ function orbitBody() {
     OmegaTotal += dOmega;
     $("#Omega").html(convertRadiansToDegrees(OmegaTotal));
 
-    // rotate the ellipse and calculate x and y in the inertial frame of reference
-    let inertialCoords = transformCoords(0, OmegaTotal, ellipse_frame_x, ellipse_frame_y)
+    let inertialX = 0;
+    let inertialY = 0;
 
-    drawBody(orbitContext, inertialCoords.X, inertialCoords.Y, "black", 1);
     if (model.isCircularModel) {
-        drawOsculatingEllipse(inertialCoords.X, inertialCoords.Y);
+        inertialX = ellipse_frame_x;
+        inertialY = ellipse_frame_y;
+    }
+    else {
+        // rotate the ellipse and calculate x and y in the inertial frame of reference
+        let inertialCoords = transformCoords(0, OmegaTotal, ellipse_frame_x, ellipse_frame_y)
+        inertialX = inertialCoords.X;
+        inertialY = inertialCoords.Y;
+    }
+    drawBody(orbitContext, inertialX, inertialY, "black", 1);
+
+    if (model.isCircularModel) {
+        drawOsculatingEllipse(inertialX, inertialY, M);
     }
         
     clearMajorAxis();
@@ -248,10 +279,11 @@ function orbitBody() {
     drawMajorAxis(axisContext, "red");
 
     if (model.isCircularModel) {
-        daysElapsed = 0;
+        redrawTimeout = setTimeout(orbitBody, 100);
     }
-
-    redrawTimeout = setTimeout(orbitBody, 10);
+    else {
+        redrawTimeout = setTimeout(orbitBody, 10);
+    }
 }
 
 function rotateAxis(Omega, omega) {
@@ -323,8 +355,6 @@ function getCircleModel() {
 
     return model;
 }
-
-
 
 function clearAllCanvases() {
     clearMajorAxis();

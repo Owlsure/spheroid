@@ -22,7 +22,7 @@
             float: right ;
             width: 50% ;
         }
-        #pdf {
+        #parameters {
             float: right;
             width: 50%;
         }
@@ -32,11 +32,14 @@
 <body>
     <h1>Apsidal Precession</h1>
     <p>A satellite will precess around an oblate spheroid. The maths behind why this happens is explained in the pdf below.</p>
+
+    <p>(Keywords : Kaula eccentricity functions apsidal precession inclination spheroid orbital Mercury spin orbit coupling)</p>
+    <p>
+        <a href="spheroid.pdf">View the PDF</a>.
+    </p>
     
     <div id="#container">
-        <!-- This element has to be before the script -->
-        <div id="animation" style="position: relative;">
-
+        <div id="parameters">
             <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
             <p>Mean Anomaly M (radians): <span id="meanAnomaly"></span></p>
             <p>Eccentic Anomaly E (radians): <span id="eccentricAnomaly"></span></p>
@@ -45,9 +48,14 @@
             <p>Precession Angle: <span id="Omega"></span></p>
             <p>Number of Complete Orbits: <span id="completeOrbits"></span></p>
 
-            <input type="radio" name="model" value="anim"> Model<br>
+        </div>
+
+        <!-- This element has to be before the script -->
+        <div id="animation" style="position: relative;">
+
+            <input type="radio" name="model" value="anim"> Model (Satellite orbits in ellipse and the ellipse rotates)<br>
             <input type="radio" name="model" value="mercury"> Mercury (precession due to Sun oblateness)<br>
-            <input type="radio" name="model" value="circular"> Circular (Osculating)<br>
+            <input type="radio" name="model" value="circular"> Circular (Actual satellite orbit - the circle. Osculating elliptical orbit - exaggerated - if the disturbing potential were to disappear)<br>
 
             <canvas id="backgroundCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
@@ -57,18 +65,6 @@
                     style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
             <canvas id="circularCanvas" width="1000" height="1000"
                     style="position: absolute; left: 0; top: 50; z-index: 3;"></canvas>
-        </div>
-
-        <div id="#pdf">
-            <p>(Keywords : Kaula eccentricity functions apsidal precession inclination spheroid orbital Mercury spin orbit coupling)</p>
-                <iframe src="spheroid.pdf"
-                        width="800px"
-                        height="2100px"
-                        style="border: none;">
-                </iframe>
-            <p>
-                <a href="spheroid.pdf">Download the PDF</a>.
-            </p>
         </div>
 
     </div>
