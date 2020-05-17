@@ -3,25 +3,26 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Global site tag (gtag.js) - Google Analytics -->
-	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-	<meta http-equiv="Pragma" content="no-cache" />
-	<meta http-equiv="Expires" content="0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-144906867-2"></script>
     <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-  gtag('config', 'UA-144906867-2');
+        gtag('config', 'UA-144906867-2');
     </script>
     <meta charset="utf-8" />
     <title>Ellipse Precession</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <style>
         #animation {
-            float: right ;
-            width: 50% ;
+            float: right;
+            width: 50%;
         }
+
         #parameters {
             float: right;
             width: 50%;
@@ -34,42 +35,46 @@
     <p>A satellite will precess around an oblate spheroid. The maths behind why this happens is explained in the pdf below.</p>
 
     <p>(Keywords : Kaula eccentricity functions apsidal precession inclination spheroid orbital Mercury spin orbit coupling)</p>
-    <p>
-        <a href="spheroid.pdf">View the PDF</a>.
+    <p><a target="_blank" href="spheroid.pdf">View the PDF</a></p>
+        
+    <p><a target="_blank" href="https://www.amazon.com/gp/product/0486414655/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=0486414655&linkCode=as2&tag=jackie34murph-20&linkId=fe8fe6259708ae23b88c0af2ed90f291">Theory of Satellite Geodesy: Applications of Satellites to Geodesy (Dover Earth Science)</a><img src="//ir-na.amazon-adsystem.com/e/ir?t=jackie34murph-20&l=am2&o=1&a=0486414655" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /></p>
+
+    <p><a target="_blank" href="https://www.amazon.com/gp/product/8126508108/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=8126508108&linkCode=as2&tag=jackie34murph-20&linkId=231039cd93b9109089f37c7a87de9175">Mathematical Methods in the Physical Sciences</a><img src="//ir-na.amazon-adsystem.com/e/ir?t=jackie34murph-20&l=am2&o=1&a=8126508108" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /></p>        
+</body>
     </p>
-    
-    <div id="#container">
-        <div id="parameters">
-            <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
-            <p>Mean Anomaly M (radians): <span id="meanAnomaly"></span></p>
-            <p>Eccentic Anomaly E (radians): <span id="eccentricAnomaly"></span></p>
-            <p>Orbit Period (days): <span id="orbitPeriod"></span></p>
-            <p><span id="yearsLabel">Years Elapsed: </span><span id="years"></span></p>
-            <p>Precession Angle: <span id="Omega"></span></p>
-            <p>Number of Complete Orbits: <span id="completeOrbits"></span></p>
 
-        </div>
-
-        <!-- This element has to be before the script -->
-        <div id="animation" style="position: relative;">
-
-            <input type="radio" name="model" value="anim"> Model (Satellite orbits in ellipse and the ellipse rotates)<br>
-            <input type="radio" name="model" value="mercury"> Mercury (precession due to Sun oblateness)<br>
-            <input type="radio" name="model" value="circular"> Circular (Actual satellite orbit - the circle. Osculating elliptical orbit - exaggerated - if the disturbing potential were to disappear)<br>
-
-            <canvas id="backgroundCanvas" width="1000" height="1000"
-                    style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
-            <canvas id="axisCanvas" width="1000" height="1000"
-                    style="position: absolute; left: 0; top: 50; z-index: 1;"></canvas>
-            <canvas id="orbitCanvas" width="1000" height="1000"
-                    style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
-            <canvas id="circularCanvas" width="1000" height="1000"
-                    style="position: absolute; left: 0; top: 50; z-index: 3;"></canvas>
-        </div>
+<div id="#container">
+    <div id="parameters">
+        <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
+        <p>Mean Anomaly M (radians): <span id="meanAnomaly"></span></p>
+        <p>Eccentic Anomaly E (radians): <span id="eccentricAnomaly"></span></p>
+        <p>Orbit Period (days): <span id="orbitPeriod"></span></p>
+        <p><span id="yearsLabel">Years Elapsed: </span><span id="years"></span></p>
+        <p>Precession Angle: <span id="Omega"></span></p>
+        <p>Number of Complete Orbits: <span id="completeOrbits"></span></p>
 
     </div>
-    
-    <script src="precession.js"></script>
 
-</body>
+    <!-- This element has to be before the script -->
+    <div id="animation" style="position: relative;">
+
+        <input type="radio" name="model" value="anim"> Model (Satellite orbits in ellipse and the ellipse rotates)<br>
+        <input type="radio" name="model" value="mercury"> Mercury (precession due to Sun oblateness)<br>
+        <input type="radio" name="model" value="circular"> Circular (Actual satellite orbit - the circle. Osculating elliptical orbit - exaggerated - if the disturbing potential were to disappear)<br>
+
+        <canvas id="backgroundCanvas" width="1000" height="1000"
+                style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
+        <canvas id="axisCanvas" width="1000" height="1000"
+                style="position: absolute; left: 0; top: 50; z-index: 1;"></canvas>
+        <canvas id="orbitCanvas" width="1000" height="1000"
+                style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
+        <canvas id="circularCanvas" width="1000" height="1000"
+                style="position: absolute; left: 0; top: 50; z-index: 3;"></canvas>
+
+    </div>
+
+</div>
+
+<script src="precession.js"></script>
+
 </html>
