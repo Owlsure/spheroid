@@ -14,64 +14,26 @@
 
         gtag('config', 'UA-144906867-2');
     </script>
+
     <meta charset="utf-8" />
-    <title>Ellipse Precession</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Xetle</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <style>
-        #animation {
-            float: right;
-            width: 50%;
-        }
-
-        #parameters {
-            float: right;
-            width: 50%;
-        }
-    </style>
-
+    <script src="scripts/precession.js"></script>
 </head>
+
 <body>
-    <h1>Apsidal Precession</h1>
-    <p>A satellite will precess around an oblate spheroid. The maths behind why this happens is explained in the pdf below.</p>
+    <app>Loading...</app>
 
-    <p>(Keywords : Kaula eccentricity functions apsidal precession inclination spheroid orbital Mercury spin orbit coupling Paul Gerber)</p>
-    <p><a target="_blank" href="spheroid.pdf">Mathematics behind precession and spin orbit coupling</a></p>
-        
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
 </body>
-    </p>
-
-<div id="#container">
-    <div id="parameters">
-        <p>The animation shows the satellite traversing along an ellipse BUT the ellipse is rotating (precessing)</p>
-        <p>Mean Anomaly M (radians): <span id="meanAnomaly"></span></p>
-        <p>Eccentic Anomaly E (radians): <span id="eccentricAnomaly"></span></p>
-        <p>Orbit Period (days): <span id="orbitPeriod"></span></p>
-        <p><span id="yearsLabel">Years Elapsed: </span><span id="years"></span></p>
-        <p>Precession Angle: <span id="Omega"></span></p>
-        <p>Number of Complete Orbits: <span id="completeOrbits"></span></p>
-
-    </div>
-
-    <!-- This element has to be before the script -->
-    <div id="animation" style="position: relative;">
-
-        <input type="radio" name="model" value="anim"> Model (Satellite orbits in ellipse and the ellipse rotates)<br>
-        <input type="radio" name="model" value="mercury"> Mercury (precession due to Sun oblateness)<br>
-        <input type="radio" name="model" value="circular"> Circular (Actual satellite orbit - the circle. Osculating elliptical orbit - exaggerated - if the disturbing potential were to disappear)<br>
-
-        <canvas id="backgroundCanvas" width="1000" height="1000"
-                style="position: absolute; left: 0; top: 50; z-index: 0;"></canvas>
-        <canvas id="axisCanvas" width="1000" height="1000"
-                style="position: absolute; left: 0; top: 50; z-index: 1;"></canvas>
-        <canvas id="orbitCanvas" width="1000" height="1000"
-                style="position: absolute; left: 0; top: 50; z-index: 2;"></canvas>
-        <canvas id="circularCanvas" width="1000" height="1000"
-                style="position: absolute; left: 0; top: 50; z-index: 3;"></canvas>
-
-    </div>
-
-</div>
-
-<script src="precession.js"></script>
 
 </html>
